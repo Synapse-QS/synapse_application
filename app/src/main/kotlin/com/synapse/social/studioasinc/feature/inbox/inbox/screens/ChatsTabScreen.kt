@@ -3,7 +3,6 @@ package com.synapse.social.studioasinc.feature.inbox.inbox.screens
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -52,7 +51,6 @@ import com.synapse.social.studioasinc.shared.domain.model.chat.Conversation
 import com.synapse.social.studioasinc.feature.shared.theme.Sizes
 import com.synapse.social.studioasinc.feature.shared.theme.Spacing
 import com.synapse.social.studioasinc.feature.shared.theme.StatusOnline
-import com.synapse.social.studioasinc.feature.shared.components.pressScale
 import com.synapse.social.studioasinc.feature.inbox.inbox.theme.InboxTheme
 import com.synapse.social.studioasinc.feature.inbox.inbox.models.EmptyStateType
 import com.synapse.social.studioasinc.shared.domain.model.settings.ChatListLayout
@@ -78,7 +76,6 @@ fun ChatsTabScreen(
     chatSwipeGesture: ChatSwipeGesture = ChatSwipeGesture.ARCHIVE,
     folders: List<ChatFolder> = emptyList(),
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
-    onOpenEncryption: (Conversation) -> Unit = {},
     onArchive: (String) -> Unit = {},
     onDelete: (String) -> Unit = {},
     onUndoArchive: (String) -> Unit = {},
@@ -233,7 +230,6 @@ fun ChatsTabScreen(
                                 conversation = conversation,
                                 isLocked = isLocked(conversation.chatId),
                                 onClick = { onConversationClick(conversation.chatId, conversation.participantId, conversation.participantName, conversation.participantAvatar) },
-                                onOpenEncryption = onOpenEncryption,
                                 layout = chatListLayout,
                                 shape = shape,
                                 folders = folders,
@@ -253,7 +249,6 @@ private fun ConversationItem(
     conversation: Conversation,
     isLocked: Boolean,
     onClick: () -> Unit,
-    onOpenEncryption: (Conversation) -> Unit,
     layout: ChatListLayout = ChatListLayout.DOUBLE_LINE,
     shape: Shape = InboxTheme.shapes.ChatItemCard,
     folders: List<ChatFolder> = emptyList(),
@@ -427,17 +422,6 @@ private fun ConversationItem(
                         }
                     }
                 }
-            }
-            if (!conversation.isGroup) {
-                Spacer(Modifier.height(Spacing.space8))
-                val encryptionChipInteraction = remember { MutableInteractionSource() }
-                AssistChip(
-                    onClick = { onOpenEncryption(conversation) },
-                    label = { Text(stringResource(R.string.messages_are_end_to_end_encrypted), maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(Sizes.IconSemiMedium)) },
-                    modifier = Modifier.pressScale(encryptionChipInteraction),
-                    interactionSource = encryptionChipInteraction
-                )
             }
         }
     }

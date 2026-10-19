@@ -24,8 +24,6 @@ import com.synapse.social.studioasinc.feature.inbox.inbox.components.InboxTopApp
 import com.synapse.social.studioasinc.feature.inbox.inbox.screens.CallsTabScreen
 import com.synapse.social.studioasinc.feature.inbox.inbox.screens.ChatsTabScreen
 import com.synapse.social.studioasinc.feature.inbox.inbox.screens.ContactsTabScreen
-import com.synapse.social.studioasinc.feature.inbox.inbox.screens.ChatEncryptionSheet
-import com.synapse.social.studioasinc.shared.domain.model.chat.Conversation
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,7 +48,6 @@ fun InboxScreen(
 
     val pagerState = rememberPagerState(pageCount = { 3 })
     val scope = rememberCoroutineScope()
-    var selectedEncryptionConversation by remember { mutableStateOf<Conversation?>(null) }
 
     Scaffold(
         modifier = Modifier
@@ -166,7 +163,6 @@ fun InboxScreen(
                             onDelete = { viewModel.deleteConversation(it) },
                             onUndoArchive = { viewModel.undoArchiveConversation(it) },
                             onAssignToFolder = { chatId, folderId -> viewModel.assignConversationToFolder(chatId, folderId) },
-                            onOpenEncryption = { selectedEncryptionConversation = it }
                         )
                     }
                 }
@@ -180,13 +176,5 @@ fun InboxScreen(
                 )
             }
         }
-    }
-    selectedEncryptionConversation?.let { conversation ->
-        ChatEncryptionSheet(
-            chatId = conversation.chatId,
-            participantName = conversation.participantName.takeIf { it.isNotBlank() }
-                ?: stringResource(R.string.chat_security_contact_fallback),
-            onDismiss = { selectedEncryptionConversation = null }
-        )
     }
 }
