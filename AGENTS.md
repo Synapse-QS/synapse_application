@@ -80,6 +80,10 @@ To ensure Synapse can be seamlessly migrated from Supabase to any alternative or
 - No `android.*` or `java.*` imports in `shared/commonMain`.
 - Business logic lives in UseCases, not ViewModels or Views.
 
+### Testing Policy — STRICT REQUIREMENT
+- **Do NOT write tests**: Agents must not write, generate, or add new unit tests, UI tests, or test suites unless explicitly requested by the user.
+- **Do NOT run tests**: Agents must not run test tasks (e.g. `./gradlew test`, `testDebugUnitTest`) unless explicitly requested by the user. Verify work via compilation and build tasks (`./gradlew compileDebugKotlin` / `./gradlew assembleDebug`).
+
 **Naming**
 
 | Type | Convention |
@@ -144,7 +148,8 @@ This is a mandatory engineering requirement, not an optional design preference.
 
 ## Pre-Commit Checklist
 
-- [ ] `./gradlew build` passes
+- [ ] Compilation passes (`./gradlew compileDebugKotlin`)
+- [ ] No tests written or executed
 - [ ] No framework imports in `shared/commonMain`
 - [ ] No hardcoded strings, colors, or dimensions in `:app`
 - [ ] Business logic is in a UseCase

@@ -169,8 +169,11 @@ object ChatMapper {
             else -> ContentStatus.ACTIVE
         }
 
+        val stableCreatedAt = if (this.createdAt.isNotBlank()) this.createdAt else newer.createdAt
+
         return newer.copy(
             clientId = this.clientId,
+            createdAt = stableCreatedAt,
             deliveryStatus = mergedDelivery,
             contentStatus = mergedContentStatus,
             isDeleted = mergedContentStatus == ContentStatus.DELETED,

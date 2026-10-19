@@ -116,6 +116,11 @@ internal fun ChatMessageList(
             null
         }
     }
+    val seenItemKeys = remember {
+        val keys = mutableSetOf<String>()
+        keys.addAll(initialItemKeys)
+        keys
+    }
 
     val reversedItems = remember(chatItems) { chatItems.reversed() }
     val groupPositions = remember(reversedItems) {
@@ -232,6 +237,19 @@ internal fun ChatMessageList(
                 item.message.createdAt < oldestInitialCreatedAt
             )
 
+            // Items animate their entrance (fadeInSpec) exactly ONCE when first added.
+            // On subsequent recompositions (e.g. server confirmation, read receipts, reactions),
+            // fadeInSpec is null to guarantee no double-animation occurs.
+            val isFirstAppearance = remember(itemKey) {
+                val alreadySeen = itemKey in seenItemKeys || isHistorical
+                if (!alreadySeen) {
+                    seenItemKeys.add(itemKey)
+                    true
+                } else {
+                    false
+                }
+            }
+
             // Shared placement spec for all item types so neighboring items
             // shift smoothly when a new message is inserted.
             // From M3 tokens: "standard default spatial" spring —
@@ -244,11 +262,12 @@ internal fun ChatMessageList(
                     // From M3 tokens: "fast effects" spring — damping 1.0
                     // (no overshoot), stiffness 3800 (fast settle). Effects
                     // springs are for color/opacity and must never overshoot.
-                    // Suppressed for historical/paginated bubbles so opening history doesn't flash.
-                    fadeInSpec = if (isHistorical) null else spring(
+                    // Only active on first appearance; suppressed on subsequent recompositions
+                    // and for historical/paginated bubbles.
+                    fadeInSpec = if (isFirstAppearance) spring(
                         dampingRatio = 1.0f,
                         stiffness = 3800f
-                    ),
+                    ) else null,
                     fadeOutSpec = spring(
                         dampingRatio = 1.0f,
                         stiffness = 3800f
@@ -280,7 +299,7 @@ internal fun ChatMessageList(
                         val targetId = message.replyToId?.takeIf { it.isNotBlank() && quotedOriginal == null }
                         targetId?.let(onLocateMessage)
                     }
-                    val bottomGap = if (position == GroupPosition.LAST || position == GroupPosition.SINGLE) Spacing.space8 else Spacing.space2
+                    val bottomGap = if (position == GroupPosition.LAST || position == GroupPosition.SINGLE) Spacing.space12 else Spacing.space2
                     MessageBubble(
                         modifier = placementModifier.padding(bottom = bottomGap),
                         message = message,

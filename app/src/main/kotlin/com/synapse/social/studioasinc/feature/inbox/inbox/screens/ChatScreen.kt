@@ -258,7 +258,13 @@ import java.io.File
                 val isFromMe = newestMessage.senderId == currentUserId
                 val isNearBottom = listState.firstVisibleItemIndex <= 3
 
-                if (isFromMe || isNearBottom) {
+                if (isFromMe) {
+                    // For messages sent by the user, immediately align to index 0 so animateItem
+                    // handles bubble entrance and placement smoothly without fighting a competing scroll animation.
+                    if (listState.firstVisibleItemIndex != 0 || listState.firstVisibleItemScrollOffset != 0) {
+                        listState.scrollToItem(0)
+                    }
+                } else if (isNearBottom) {
                     if (listState.firstVisibleItemIndex != 0 || listState.firstVisibleItemScrollOffset != 0) {
                         listState.animateScrollToItem(0)
                     }
