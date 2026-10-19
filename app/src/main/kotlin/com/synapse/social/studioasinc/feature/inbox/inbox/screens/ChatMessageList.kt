@@ -27,7 +27,6 @@ import com.synapse.social.studioasinc.feature.inbox.inbox.components.isWithinTim
 import com.synapse.social.studioasinc.feature.inbox.inbox.components.quotedSenderDisplayName
 import com.synapse.social.studioasinc.feature.inbox.inbox.components.TypingIndicator
 import com.synapse.social.studioasinc.feature.inbox.inbox.models.ChatListItem
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import com.synapse.social.studioasinc.feature.auth.ui.util.AnimationUtil
 import com.synapse.social.studioasinc.feature.shared.theme.Sizes
@@ -95,31 +94,19 @@ internal fun ChatMessageList(
     }
 
     val reducedMotion = AnimationUtil.rememberReducedMotion()
-    val startedWithEmptyHistory = remember { messages.isEmpty() }
-    val initialItemKeys = remember {
-        val keys = mutableSetOf<String>()
-        if (!startedWithEmptyHistory) {
-            chatItems.forEach { item ->
-                when (item) {
-                    is ChatListItem.DateDivider -> keys.add("date_${item.label}")
-                    is ChatListItem.UnreadDivider -> keys.add("unread_divider")
-                    is ChatListItem.MessageItem -> keys.add(item.message.clientId)
-                }
+    val initialKeysCaptured = remember { mutableStateOf(false) }
+    val initialItemKeys = remember { mutableSetOf<String>() }
+    val oldestInitialCreatedAt = remember { mutableStateOf<String?>(null) }
+    if (!initialKeysCaptured.value && chatItems.isNotEmpty()) {
+        chatItems.forEach { item ->
+            when (item) {
+                is ChatListItem.DateDivider -> initialItemKeys.add("date_${item.label}")
+                is ChatListItem.UnreadDivider -> initialItemKeys.add("unread_divider")
+                is ChatListItem.MessageItem -> initialItemKeys.add(item.message.clientId)
             }
         }
-        keys
-    }
-    val oldestInitialCreatedAt = remember {
-        if (!startedWithEmptyHistory) {
-            messages.minByOrNull { it.createdAt }?.createdAt
-        } else {
-            null
-        }
-    }
-    val seenItemKeys = remember {
-        val keys = mutableSetOf<String>()
-        keys.addAll(initialItemKeys)
-        keys
+        oldestInitialCreatedAt.value = messages.minByOrNull { it.createdAt }?.createdAt
+        initialKeysCaptured.value = true
     }
 
     val reversedItems = remember(chatItems) { chatItems.reversed() }
@@ -206,10 +193,13 @@ internal fun ChatMessageList(
                             dampingRatio = 1.0f,
                             stiffness = 3800f
                         ),
-                        // M3 standard default spatial spring: damping 0.9, stiffness 700
+                        // Critically-damped spatial spring: no overshoot, fast settle.
+                        // Project design decision: damping 1.0 / stiffness 1500 to
+                        // prevent visible bounce when the typing indicator pushes
+                        // messages upward.
                         placementSpec = spring(
-                            dampingRatio = 0.9f,
-                            stiffness = 700f
+                            dampingRatio = 1.0f,
+                            stiffness = 1500f
                         )
                     )
                 } else {
@@ -231,40 +221,27 @@ internal fun ChatMessageList(
                 is ChatListItem.UnreadDivider -> "unread_divider"
                 is ChatListItem.MessageItem -> item.message.clientId
             }
+            val oldestCreatedAt = oldestInitialCreatedAt.value
             val isHistorical = itemKey in initialItemKeys || (
                 item is ChatListItem.MessageItem &&
-                oldestInitialCreatedAt != null &&
-                item.message.createdAt < oldestInitialCreatedAt
+                oldestCreatedAt != null &&
+                item.message.createdAt < oldestCreatedAt
             )
 
-            // Items animate their entrance (fadeInSpec) exactly ONCE when first added.
-            // On subsequent recompositions (e.g. server confirmation, read receipts, reactions),
-            // fadeInSpec is null to guarantee no double-animation occurs.
-            val isFirstAppearance = remember(itemKey) {
-                val alreadySeen = itemKey in seenItemKeys || isHistorical
-                if (!alreadySeen) {
-                    seenItemKeys.add(itemKey)
-                    true
-                } else {
-                    false
-                }
-            }
-
-            // Shared placement spec for all item types so neighboring items
-            // shift smoothly when a new message is inserted.
-            // From M3 tokens: "standard default spatial" spring —
-            // damping 0.9 (barely bounces), stiffness 700 (settles quickly).
-            // Project design decision: using standard (not expressive) scheme
-            // for placement because chat message insertion should feel stable,
-            // not theatrical.
+            // Shared placement and entrance spec for items.
+            // Project design decision: critically-damped spatial spring
+            // (damping 1.0 / stiffness 1500) so existing bubbles slide into
+            // their new positions without any visible bounce or overshoot.
+            // Using damping 1.0 instead of M3's standard 0.9 because the
+            // underdamped bounce was perceptible in a reverse-layout chat
+            // list and looked glitchy rather than expressive.
             val placementModifier = if (!reducedMotion) {
                 Modifier.animateItem(
                     // From M3 tokens: "fast effects" spring — damping 1.0
                     // (no overshoot), stiffness 3800 (fast settle). Effects
                     // springs are for color/opacity and must never overshoot.
-                    // Only active on first appearance; suppressed on subsequent recompositions
-                    // and for historical/paginated bubbles.
-                    fadeInSpec = if (isFirstAppearance) spring(
+                    // Only active on first appearance; suppressed for historical/paginated bubbles.
+                    fadeInSpec = if (!isHistorical) spring(
                         dampingRatio = 1.0f,
                         stiffness = 3800f
                     ) else null,
@@ -273,8 +250,8 @@ internal fun ChatMessageList(
                         stiffness = 3800f
                     ),
                     placementSpec = spring(
-                        dampingRatio = 0.9f,
-                        stiffness = 700f
+                        dampingRatio = 1.0f,
+                        stiffness = 1500f
                     )
                 )
             } else {

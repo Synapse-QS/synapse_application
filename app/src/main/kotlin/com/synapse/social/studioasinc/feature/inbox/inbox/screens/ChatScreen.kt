@@ -245,7 +245,9 @@ import java.io.File
     var showDisappearingModeDialog by remember { mutableStateOf(false) }
 
     var lastScrolledMessageClientId by remember { mutableStateOf<String?>(null) }
-    val newestMessage = remember(messages) { messages.lastOrNull() }
+    val newestMessage = remember(chatItems) {
+        chatItems.filterIsInstance<ChatListItem.MessageItem>().lastOrNull()?.message
+    }
     val newestMessageClientId = newestMessage?.clientId
 
     LaunchedEffect(newestMessageClientId) {
@@ -256,16 +258,16 @@ import java.io.File
                 lastScrolledMessageClientId = newestMessageClientId
             } else if (newestMessageClientId != lastScrolledMessageClientId) {
                 val isFromMe = newestMessage.senderId == currentUserId
-                val isNearBottom = listState.firstVisibleItemIndex <= 3
+                val isNearBottom = listState.firstVisibleItemIndex <= 1
 
                 if (isFromMe) {
-                    // For messages sent by the user, immediately align to index 0 so animateItem
-                    // handles bubble entrance and placement smoothly without fighting a competing scroll animation.
-                    if (listState.firstVisibleItemIndex != 0 || listState.firstVisibleItemScrollOffset != 0) {
+                    if (listState.firstVisibleItemIndex > 3) {
                         listState.scrollToItem(0)
+                    } else if (listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0) {
+                        listState.animateScrollToItem(0)
                     }
                 } else if (isNearBottom) {
-                    if (listState.firstVisibleItemIndex != 0 || listState.firstVisibleItemScrollOffset != 0) {
+                    if (listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0) {
                         listState.animateScrollToItem(0)
                     }
                 }

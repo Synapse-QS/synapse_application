@@ -55,7 +55,7 @@ object ChatItemsMapper {
         val sorted = messages.sortedWith(
             compareBy<Message> { safeParseInstant(it.createdAt)?.toEpochMilli() ?: 0L }
                 .thenBy { it.createdAt }
-                .thenBy { it.id }
+                .thenBy { it.clientId }
         )
         val result = mutableListOf<ChatListItem>()
         var lastDate: LocalDate? = null
