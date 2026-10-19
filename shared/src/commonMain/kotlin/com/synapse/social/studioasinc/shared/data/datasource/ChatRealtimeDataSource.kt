@@ -99,7 +99,7 @@ internal class ChatRealtimeDataSource(private val client: SupabaseClientLib) {
 
         // Register the postgres change listener BEFORE subscribing.
         // postgresChangeFlow only registers the filter — it does not start the WebSocket
-        val changeFlow = channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
+        val changeFlow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
             table = "messages"
             filter("chat_id", FilterOperator.EQ, chatId)
         }
@@ -111,12 +111,22 @@ internal class ChatRealtimeDataSource(private val client: SupabaseClientLib) {
                     .onStart { subscriptionReady.complete(Unit) }
                     .collect { action ->
                         try {
-                            val record = action.decodeRecord<MessageDto>()
-                            Napier.d("Realtime message received in channel $channelId: ${record.id} for chat $chatId", tag = "Realtime")
-                            trySend(record)
+                            when (action) {
+                                is PostgresAction.Insert -> {
+                                    val record = action.decodeRecord<MessageDto>()
+                                    Napier.d("Realtime message INSERT received in channel $channelId: ${record.id} for chat $chatId", tag = "Realtime")
+                                    trySend(record)
+                                }
+                                is PostgresAction.Update -> {
+                                    val record = action.decodeRecord<MessageDto>()
+                                    Napier.d("Realtime message UPDATE received in channel $channelId: ${record.id} for chat $chatId, status=${record.deliveryStatus}", tag = "Realtime")
+                                    trySend(record)
+                                }
+                                else -> {}
+                            }
                         } catch (e: Exception) {
                             if (e is CancellationException) throw e
-                            Napier.e("Error decoding realtime message", e, tag = "Realtime")
+                            Napier.e("Error decoding realtime message action", e, tag = "Realtime")
                         }
                     }
             } catch (e: Exception) {
@@ -190,7 +200,7 @@ internal class ChatRealtimeDataSource(private val client: SupabaseClientLib) {
         } catch (e: Exception) {}
 
         val channel = client.realtime.channel(channelId)
-        val flow = channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
+        val flow = channel.postgresChangeFlow<PostgresAction>(schema = "public") {
             table = "messages"
         }
 
@@ -201,9 +211,19 @@ internal class ChatRealtimeDataSource(private val client: SupabaseClientLib) {
                     .onStart { subscriptionReady.complete(Unit) }
                     .collect { action ->
                         try {
-                            val message = action.decodeRecord<MessageDto>()
-                            Napier.d("Realtime inbox update received: ${message.id}", tag = "Realtime")
-                            trySend(message)
+                            when (action) {
+                                is PostgresAction.Insert -> {
+                                    val message = action.decodeRecord<MessageDto>()
+                                    Napier.d("Realtime inbox INSERT received: ${message.id}", tag = "Realtime")
+                                    trySend(message)
+                                }
+                                is PostgresAction.Update -> {
+                                    val message = action.decodeRecord<MessageDto>()
+                                    Napier.d("Realtime inbox UPDATE received: ${message.id}", tag = "Realtime")
+                                    trySend(message)
+                                }
+                                else -> {}
+                            }
                         } catch (e: Exception) {
                             if (e is CancellationException) throw e
                             Napier.e("Error decoding real-time message in inbox", e, tag = "Realtime")

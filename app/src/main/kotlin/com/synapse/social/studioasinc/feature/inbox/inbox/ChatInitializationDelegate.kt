@@ -7,7 +7,6 @@ import com.synapse.social.studioasinc.shared.domain.usecase.chat.GetGroupMembers
 import com.synapse.social.studioasinc.shared.domain.usecase.chat.GetMessagesUseCase
 import com.synapse.social.studioasinc.shared.domain.usecase.chat.GetOrCreateChatUseCase
 import com.synapse.social.studioasinc.shared.domain.usecase.chat.InitializeE2EUseCase
-import com.synapse.social.studioasinc.shared.domain.usecase.chat.MarkMessagesAsDeliveredUseCase
 import com.synapse.social.studioasinc.shared.domain.usecase.chat.MarkMessagesAsReadUseCase
 import com.synapse.social.studioasinc.shared.domain.usecase.presence.ObserveUserActiveStatusUseCase
 import com.synapse.social.studioasinc.shared.domain.usecase.user.GetUserProfileUseCase
@@ -25,7 +24,6 @@ class ChatInitializationDelegate(
     private val getGroupMembersUseCase: GetGroupMembersUseCase,
     private val observeUserActiveStatusUseCase: ObserveUserActiveStatusUseCase,
     private val markMessagesAsReadUseCase: MarkMessagesAsReadUseCase,
-    private val markMessagesAsDeliveredUseCase: MarkMessagesAsDeliveredUseCase,
     private val viewModelScope: CoroutineScope,
     private val currentUserIdProvider: () -> String?,
     private val messagingDelegate: ChatMessagingDelegate,
@@ -66,7 +64,6 @@ class ChatInitializationDelegate(
                     Napier.w("Network refresh failed on re-entry for chatId=$chatId: ${e.message}", tag = "ChatInit")
                 }
                 markMessagesAsReadUseCase(chatId)
-                markMessagesAsDeliveredUseCase(chatId)
             }
             return
         }
@@ -132,7 +129,6 @@ class ChatInitializationDelegate(
                 }
                 aiDelegate.generateSmartReplies(messagingDelegate.messages.value)
                 markMessagesAsReadUseCase(actualChatId)
-                markMessagesAsDeliveredUseCase(actualChatId)
             }
 
             launch {

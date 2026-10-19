@@ -63,16 +63,11 @@ class ChatSubscriptionDelegate(
                                 try {
                                     if (isScreenVisibleProvider()) {
                                         markMessagesAsReadUseCase(chatId)
+                                    } else {
+                                        markMessagesAsDeliveredUseCase(chatId)
                                     }
                                 } catch (e: Exception) {
-                                    io.github.aakira.napier.Napier.e("Failed to mark messages as read", e)
-                                }
-                            }
-                            viewModelScope.launch {
-                                try {
-                                    markMessagesAsDeliveredUseCase(chatId)
-                                } catch (e: Exception) {
-                                    io.github.aakira.napier.Napier.e("Failed to mark messages as delivered", e)
+                                    io.github.aakira.napier.Napier.e("Failed to mark messages as read/delivered", e)
                                 }
                             }
                         }

@@ -286,7 +286,6 @@ class ChatViewModel @Inject constructor(
         getGroupMembersUseCase = getGroupMembersUseCase,
         observeUserActiveStatusUseCase = observeUserActiveStatusUseCase,
         markMessagesAsReadUseCase = markMessagesAsReadUseCase,
-        markMessagesAsDeliveredUseCase = markMessagesAsDeliveredUseCase,
         viewModelScope = viewModelScope,
         currentUserIdProvider = { currentUserId },
         messagingDelegate = messagingDelegate,
@@ -346,9 +345,6 @@ class ChatViewModel @Inject constructor(
             currentChatId?.let { chatId ->
                 viewModelScope.launch {
                     markMessagesAsReadUseCase(chatId)
-                    // The visible chat has now received its history; acknowledge only
-                    // peer messages (the data source enforces sender scoping).
-                    markMessagesAsDeliveredUseCase(chatId)
                 }
             }
         }
