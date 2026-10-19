@@ -24,6 +24,8 @@ import com.synapse.social.studioasinc.feature.inbox.inbox.components.InboxTopApp
 import com.synapse.social.studioasinc.feature.inbox.inbox.screens.CallsTabScreen
 import com.synapse.social.studioasinc.feature.inbox.inbox.screens.ChatsTabScreen
 import com.synapse.social.studioasinc.feature.inbox.inbox.screens.ContactsTabScreen
+import com.synapse.social.studioasinc.feature.inbox.inbox.screens.ChatEncryptionSheet
+import com.synapse.social.studioasinc.shared.domain.model.chat.Conversation
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
