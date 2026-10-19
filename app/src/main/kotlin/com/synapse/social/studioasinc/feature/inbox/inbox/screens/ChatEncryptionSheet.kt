@@ -55,7 +55,6 @@ import com.synapse.social.studioasinc.feature.inbox.inbox.ChatEncryptionUiState
 import com.synapse.social.studioasinc.feature.inbox.inbox.ChatEncryptionViewModel
 import com.synapse.social.studioasinc.feature.shared.components.pressScale
 import com.synapse.social.studioasinc.feature.shared.theme.ChatEncryptionMetrics
-import com.synapse.social.studioasinc.feature.shared.theme.ChatEncryptionTheme
 import com.synapse.social.studioasinc.feature.shared.theme.Spacing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -70,75 +69,73 @@ fun ChatEncryptionSheet(
     onDismiss: () -> Unit,
     viewModel: ChatEncryptionViewModel = hiltViewModel()
 ) {
-    ChatEncryptionTheme {
-        val uiState by viewModel.uiState.collectAsState()
-        val context = LocalContext.current
-        val motion = MaterialTheme.motionScheme
-        var page by remember { mutableStateOf(EncryptionSheetPage.OVERVIEW) }
-        var showPrivacyExplanation by remember { mutableStateOf(false) }
-        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        LaunchedEffect(chatId) { viewModel.load(chatId) }
-        BackHandler(enabled = page == EncryptionSheetPage.VERIFY) { page = EncryptionSheetPage.OVERVIEW }
+    val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val motion = MaterialTheme.motionScheme
+    var page by remember { mutableStateOf(EncryptionSheetPage.OVERVIEW) }
+    var showPrivacyExplanation by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    LaunchedEffect(chatId) { viewModel.load(chatId) }
+    BackHandler(enabled = page == EncryptionSheetPage.VERIFY) { page = EncryptionSheetPage.OVERVIEW }
 
-        ModalBottomSheet(
-            onDismissRequest = onDismiss,
-            sheetState = sheetState,
-            shape = RoundedCornerShape(topStart = ChatEncryptionMetrics.sheetCornerRadius, topEnd = ChatEncryptionMetrics.sheetCornerRadius),
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            dragHandle = { BottomSheetDefaults.DragHandle() }
-        ) {
-            AnimatedContent(
-                targetState = page,
-                transitionSpec = {
-                    if (targetState == EncryptionSheetPage.VERIFY) {
-                        (slideInHorizontally(initialOffsetX = { it }, animationSpec = motion.defaultSpatialSpec()) + fadeIn(animationSpec = motion.fastEffectsSpec())) togetherWith
-                            (slideOutHorizontally(targetOffsetX = { -it }, animationSpec = motion.defaultSpatialSpec()) + fadeOut(animationSpec = motion.fastEffectsSpec()))
-                    } else {
-                        (slideInHorizontally(initialOffsetX = { -it }, animationSpec = motion.defaultSpatialSpec()) + fadeIn(animationSpec = motion.fastEffectsSpec())) togetherWith
-                            (slideOutHorizontally(targetOffsetX = { it }, animationSpec = motion.defaultSpatialSpec()) + fadeOut(animationSpec = motion.fastEffectsSpec()))
-                    }
-                },
-                label = "chatEncryptionPage"
-            ) { visiblePage ->
-                when (visiblePage) {
-                    EncryptionSheetPage.OVERVIEW -> EncryptionOverview(
-                        state = uiState,
-                        participantName = participantName,
-                        onShowVerification = { if (uiState.info != null) page = EncryptionSheetPage.VERIFY },
-                        onLearnMore = { showPrivacyExplanation = true },
-                        onDismiss = onDismiss
-                    )
-                    EncryptionSheetPage.VERIFY -> VerificationContent(
-                        state = uiState,
-                        participantName = participantName,
-                        onBack = { page = EncryptionSheetPage.OVERVIEW },
-                        onShare = { uiState.info?.let { shareSafetyNumber(context, participantName, it) } },
-                        onScan = {
-                            GmsBarcodeScanning.getClient(context).startScan()
-                                .addOnSuccessListener { barcode ->
-                                    val value = barcode.rawValue
-                                    if (value.isNullOrBlank()) viewModel.reportScannerUnavailable() else viewModel.verifyScannedCode(value)
-                                }
-                                .addOnFailureListener { viewModel.reportScannerUnavailable() }
-                        },
-                        onToggleVerified = { viewModel.setVerified(!uiState.info?.isVerified.orFalse()) }
-                    )
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = ChatEncryptionMetrics.sheetCornerRadius, topEnd = ChatEncryptionMetrics.sheetCornerRadius),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        dragHandle = { BottomSheetDefaults.DragHandle() }
+    ) {
+        AnimatedContent(
+            targetState = page,
+            transitionSpec = {
+                if (targetState == EncryptionSheetPage.VERIFY) {
+                    (slideInHorizontally(initialOffsetX = { it }, animationSpec = motion.defaultSpatialSpec()) + fadeIn(animationSpec = motion.fastEffectsSpec())) togetherWith
+                        (slideOutHorizontally(targetOffsetX = { -it }, animationSpec = motion.defaultSpatialSpec()) + fadeOut(animationSpec = motion.fastEffectsSpec()))
+                } else {
+                    (slideInHorizontally(initialOffsetX = { -it }, animationSpec = motion.defaultSpatialSpec()) + fadeIn(animationSpec = motion.fastEffectsSpec())) togetherWith
+                        (slideOutHorizontally(targetOffsetX = { it }, animationSpec = motion.defaultSpatialSpec()) + fadeOut(animationSpec = motion.fastEffectsSpec()))
                 }
+            },
+            label = "chatEncryptionPage"
+        ) { visiblePage ->
+            when (visiblePage) {
+                EncryptionSheetPage.OVERVIEW -> EncryptionOverview(
+                    state = uiState,
+                    participantName = participantName,
+                    onShowVerification = { if (uiState.info != null) page = EncryptionSheetPage.VERIFY },
+                    onLearnMore = { showPrivacyExplanation = true },
+                    onDismiss = onDismiss
+                )
+                EncryptionSheetPage.VERIFY -> VerificationContent(
+                    state = uiState,
+                    participantName = participantName,
+                    onBack = { page = EncryptionSheetPage.OVERVIEW },
+                    onShare = { uiState.info?.let { shareSafetyNumber(context, participantName, it) } },
+                    onScan = {
+                        GmsBarcodeScanning.getClient(context).startScan()
+                            .addOnSuccessListener { barcode ->
+                                val value = barcode.rawValue
+                                if (value.isNullOrBlank()) viewModel.reportScannerUnavailable() else viewModel.verifyScannedCode(value)
+                            }
+                            .addOnFailureListener { viewModel.reportScannerUnavailable() }
+                    },
+                    onToggleVerified = { viewModel.setVerified(!uiState.info?.isVerified.orFalse()) }
+                )
             }
         }
-        if (showPrivacyExplanation) {
-            AlertDialog(
-                onDismissRequest = { showPrivacyExplanation = false },
-                icon = { Icon(Icons.Rounded.VerifiedUser, contentDescription = null) },
-                title = { Text(stringResource(R.string.chat_security_learn_title)) },
-                text = { Text(stringResource(R.string.chat_security_learn_body, participantName)) },
-                confirmButton = {
-                    TextButton(onClick = { showPrivacyExplanation = false }) { Text(stringResource(R.string.chat_security_got_it)) }
-                },
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-            )
-        }
+    }
+    if (showPrivacyExplanation) {
+        AlertDialog(
+            onDismissRequest = { showPrivacyExplanation = false },
+            icon = { Icon(Icons.Rounded.VerifiedUser, contentDescription = null) },
+            title = { Text(stringResource(R.string.chat_security_learn_title)) },
+            text = { Text(stringResource(R.string.chat_security_learn_body, participantName)) },
+            confirmButton = {
+                TextButton(onClick = { showPrivacyExplanation = false }) { Text(stringResource(R.string.chat_security_got_it)) }
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        )
     }
 }
 
