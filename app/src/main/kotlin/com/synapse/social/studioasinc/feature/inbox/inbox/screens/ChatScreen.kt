@@ -243,6 +243,7 @@ import java.io.File
 
     var listReady by remember { mutableStateOf(false) }
     var showDisappearingModeDialog by remember { mutableStateOf(false) }
+    var showEncryptionSheet by rememberSaveable { mutableStateOf(false) }
 
     var lastScrolledMessageId by remember { mutableStateOf<String?>(null) }
     val newestMessage = remember(messages) { messages.lastOrNull() }
@@ -287,6 +288,7 @@ import java.io.File
                 onSummarizeChat = viewModel::summarizeChat,
                 onNavigateToGroupInfo = onNavigateToGroupInfo,
                 onNavigateToChatInfo = onNavigateToChatInfo,
+                onOpenEncryptionSheet = { showEncryptionSheet = true },
                 onSetDisappearingMode = { showDisappearingModeDialog = true },
                 onLockChat = viewModel::lockCurrentChat,
                 onUnlockChat = viewModel::unlockCurrentChat
@@ -516,6 +518,17 @@ import java.io.File
                 onDismissRequest = { showDisappearingModeDialog = false }
             )
         }
+    }
+
+    if (showEncryptionSheet) {
+        ChatEncryptionSheet(
+            chatId = viewModel.resolvedChatId ?: chatId,
+            participantName = participantProfile?.displayName?.takeIf { it.isNotBlank() }
+                ?: participantProfile?.username?.takeIf { it.isNotBlank() }
+                ?: initialParticipantName?.takeIf { it.isNotBlank() }
+                ?: stringResource(R.string.chat_security_contact_fallback),
+            onDismiss = { showEncryptionSheet = false }
+        )
     }
 
     selectedMediaFiles?.let { files ->

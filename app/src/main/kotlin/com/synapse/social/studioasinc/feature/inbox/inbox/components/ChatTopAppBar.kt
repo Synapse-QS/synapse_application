@@ -1,9 +1,12 @@
 package com.synapse.social.studioasinc.feature.inbox.inbox.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.VerifiedUser
+import com.synapse.social.studioasinc.feature.shared.components.pressScale
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,6 +47,7 @@ fun ChatTopAppBar(
     onSummarizeChat: () -> Unit,
     onNavigateToGroupInfo: (String, String) -> Unit,
     onNavigateToChatInfo: (String, String) -> Unit,
+    onOpenEncryptionSheet: () -> Unit,
     onSetDisappearingMode: (DisappearingMode) -> Unit,
     onLockChat: () -> Unit,
     onUnlockChat: () -> Unit
@@ -139,6 +143,10 @@ fun ChatTopAppBar(
                         contentDescription = "Summarize Chat with AI",
                         tint = MaterialTheme.colorScheme.primary
                     )
+                }
+                val encryptionInteraction = remember { MutableInteractionSource() }
+                IconButton(onClick = onOpenEncryptionSheet, interactionSource = encryptionInteraction, modifier = Modifier.pressScale(encryptionInteraction)) {
+                    Icon(Icons.Rounded.VerifiedUser, contentDescription = stringResource(R.string.chat_security_open_sheet), tint = MaterialTheme.colorScheme.primary)
                 }
                 IconButton(onClick = {
                     if (participantProfile?.accountType != "group") {
