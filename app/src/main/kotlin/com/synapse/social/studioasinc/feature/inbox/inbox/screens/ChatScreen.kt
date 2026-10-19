@@ -413,21 +413,6 @@ import java.io.File
                 onDismissRequest = viewModel::clearMessageSummary
             )
 
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .height(Sizes.HeightMedium)
-                    .background(
-                        brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                MaterialTheme.colorScheme.surface
-                            )
-                        )
-                    )
-            )
-
             if (voiceState is VoiceState.Recording || voiceState is VoiceState.Locked) {
                 VoiceRecordingAmbientGlow(
                     voiceState = voiceState,
