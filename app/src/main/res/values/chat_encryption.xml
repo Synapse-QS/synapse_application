@@ -16,7 +16,7 @@
     <string name="chat_security_messages_pending">Messages are encrypted when a secure session is established.</string>
     <string name="chat_security_media_title">Media and documents</string>
     <string name="chat_security_media_active">Stored with unreadable keys in transit</string>
-    <string name="chat_security_media_pending">Attachments use the conversation&apos;s secure session when it is active.</string>
+    <string name="chat_security_media_pending">Attachments are protected by a secure session while in transit.</string>
     <string name="chat_security_verify_button">Verify security code</string>
     <string name="chat_security_learn_more">Learn more about privacy</string>
     <string name="chat_security_learn_title">About this security number</string>

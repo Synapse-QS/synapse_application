@@ -58,7 +58,7 @@ jobs:
           gradle_status=${PIPESTATUS[0]}
           set -e
           if [ "$gradle_status" -ne 0 ]; then
-          diagnostics=$(grep -E '(^e: |^FAILURE:|^\* What went wrong:|^Execution failed for task|^Task .*not found|UnknownTaskException|^> Task .* FAILED|^.* FAILED$|^.*AssertionError:)' "$RUNNER_TEMP/assembleRelease.log" | tail -n 25 || true)
+          diagnostics=$(grep -E '(^e: |^FAILURE:|^\* What went wrong:|^Execution failed for task|^Task .*not found|UnknownTaskException|^> Task .* FAILED|^.* FAILED$|^.*AssertionError:|^.*error:|^.*AAPT2|^.*failed linking references)' "$RUNNER_TEMP/assembleRelease.log" | tail -n 25 || true)
           if [ -z "$diagnostics" ]; then
             diagnostics=$(awk 'BEGIN { remaining = 0 } /^\* What went wrong:/ { remaining = 12 } remaining > 0 { print; remaining-- }' "$RUNNER_TEMP/assembleRelease.log")
           fi
