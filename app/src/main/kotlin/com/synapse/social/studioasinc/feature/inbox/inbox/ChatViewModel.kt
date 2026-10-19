@@ -155,7 +155,6 @@ class ChatViewModel @Inject constructor(
     val isScreenVisible: StateFlow<Boolean> = _isScreenVisible.asStateFlow()
 
     private var currentChatId: String? = null
-    val resolvedChatId: String? get() = currentChatId
     private val loadingQuotedMessageIds = ConcurrentHashMap<String, Unit>()
     private val historyPaginationMutex = Mutex()
 
