@@ -88,7 +88,7 @@ class ChatInitializationDelegate(
         }
 
         viewModelScope.launch {
-            val actualChatId = if (chatId == "new" && participantId != null) {
+            val actualChatId = if ((chatId == "new" || chatId == participantId) && participantId != null) {
                 getOrCreateChatUseCase(participantId).getOrElse {
                     _error.value = "Failed to create chat"
                     _isLoading.value = false
