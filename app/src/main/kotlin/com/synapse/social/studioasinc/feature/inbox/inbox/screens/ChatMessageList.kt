@@ -97,6 +97,9 @@ internal fun ChatMessageList(
     val initialKeysCaptured = remember { mutableStateOf(false) }
     val initialItemKeys = remember { mutableSetOf<String>() }
     val oldestInitialCreatedAt = remember { mutableStateOf<String?>(null) }
+    // Tracks every item key ever composed so fadeInSpec fires exactly once per item.
+    // Seeded with initialItemKeys so items present at first load never fade in.
+    val seenItemKeys = remember { mutableSetOf<String>() }
     if (!initialKeysCaptured.value && chatItems.isNotEmpty()) {
         chatItems.forEach { item ->
             when (item) {
@@ -105,6 +108,7 @@ internal fun ChatMessageList(
                 is ChatListItem.MessageItem -> initialItemKeys.add(item.message.clientId)
             }
         }
+        seenItemKeys.addAll(initialItemKeys)
         oldestInitialCreatedAt.value = messages.minByOrNull { it.createdAt }?.createdAt
         initialKeysCaptured.value = true
     }
@@ -228,6 +232,18 @@ internal fun ChatMessageList(
                 item.message.createdAt < oldestCreatedAt
             )
 
+            // Track whether this is the very first time this item is composed.
+            // Once an item is added to seenItemKeys, fadeInSpec will be null
+            // for all future recompositions — preventing flicker when the
+            // LazyColumn recycles items (e.g. composer height changes on typing).
+            val isFirstAppearance = if (!isHistorical && itemKey !in seenItemKeys) {
+                seenItemKeys.add(itemKey)
+                true
+            } else {
+                seenItemKeys.add(itemKey) // still track it
+                false
+            }
+
             // Shared placement and entrance spec for items.
             // Project design decision: critically-damped spatial spring
             // (damping 1.0 / stiffness 1500) so existing bubbles slide into
@@ -240,8 +256,9 @@ internal fun ChatMessageList(
                     // From M3 tokens: "fast effects" spring — damping 1.0
                     // (no overshoot), stiffness 3800 (fast settle). Effects
                     // springs are for color/opacity and must never overshoot.
-                    // Only active on first appearance; suppressed for historical/paginated bubbles.
-                    fadeInSpec = if (!isHistorical) spring(
+                    // Only active on first appearance; null on all subsequent
+                    // recompositions to prevent flicker on item recycling.
+                    fadeInSpec = if (isFirstAppearance) spring(
                         dampingRatio = 1.0f,
                         stiffness = 3800f
                     ) else null,
