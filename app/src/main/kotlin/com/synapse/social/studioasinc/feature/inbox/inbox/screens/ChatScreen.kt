@@ -244,24 +244,26 @@ import java.io.File
     var listReady by remember { mutableStateOf(false) }
     var showDisappearingModeDialog by remember { mutableStateOf(false) }
 
-    var lastScrolledMessageId by remember { mutableStateOf<String?>(null) }
+    var lastScrolledMessageClientId by remember { mutableStateOf<String?>(null) }
     val newestMessage = remember(messages) { messages.lastOrNull() }
-    val newestMessageId = newestMessage?.id
+    val newestMessageClientId = newestMessage?.clientId
 
-    LaunchedEffect(newestMessageId) {
-        if (newestMessageId != null) {
+    LaunchedEffect(newestMessageClientId) {
+        if (newestMessageClientId != null) {
             if (!listReady) {
                 listState.scrollToItem(0)
                 listReady = true
-                lastScrolledMessageId = newestMessageId
-            } else if (newestMessageId != lastScrolledMessageId) {
+                lastScrolledMessageClientId = newestMessageClientId
+            } else if (newestMessageClientId != lastScrolledMessageClientId) {
                 val isFromMe = newestMessage.senderId == currentUserId
                 val isNearBottom = listState.firstVisibleItemIndex <= 3
 
                 if (isFromMe || isNearBottom) {
-                    listState.animateScrollToItem(0)
+                    if (listState.firstVisibleItemIndex != 0 || listState.firstVisibleItemScrollOffset != 0) {
+                        listState.animateScrollToItem(0)
+                    }
                 }
-                lastScrolledMessageId = newestMessageId
+                lastScrolledMessageClientId = newestMessageClientId
             }
         }
     }

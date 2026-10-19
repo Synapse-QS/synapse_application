@@ -44,6 +44,18 @@ Presentation  →  ViewModel  →  Domain (UseCases / Interfaces)  →  Data (Re
 
 ---
 
+## Backend Independence & Migration Isolation
+
+To ensure Synapse can be seamlessly migrated from Supabase to any alternative or custom backend:
+
+- **Provider-Neutral Domain:** Domain models, UseCases, and repository/service interfaces must remain 100% agnostic of backend vendors. No Supabase (or any provider) types, schemas, or semantics in Domain.
+- **Data-Layer Encapsulation:** All Supabase SDKs, PostgREST queries, GoTrue auth, realtime channels, and Supabase Storage calls must be encapsulated entirely inside `:shared` data-layer implementations.
+- **Provider-Neutral Capabilities:** Abstract authentication, file storage, and realtime messaging behind generic domain interfaces (e.g., `AuthRepository`, `FileStorageService`, `RealtimeStreamService`).
+- **No Direct Frontend/UI Access:** UI components, ViewModels, and platform apps (Android `:app`, iOS `:iosApp`, web) must consume feature UseCases or domain interfaces exclusively. Direct backend SDK calls or provider imports in UI/ViewModels are strictly prohibited.
+- **Strict Dependency Injection:** All backend-specific data sources and adapters must be injected via DI (Koin / Hilt). Never instantiate concrete backend implementations or provider singletons outside the data layer.
+
+---
+
 ## Android (`:app`)
 
 - 100% Jetpack Compose. No XML.

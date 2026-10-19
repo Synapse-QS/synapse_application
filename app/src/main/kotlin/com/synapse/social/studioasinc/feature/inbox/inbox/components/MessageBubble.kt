@@ -148,9 +148,12 @@ fun SenderHeaderRow(
 }
 
 @Composable
-fun DateDividerChip(label: String) {
+fun DateDividerChip(
+    label: String,
+    modifier: Modifier = Modifier
+) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(vertical = Spacing.space8),
         contentAlignment = Alignment.Center
@@ -200,9 +203,12 @@ private fun WavyDivider(modifier: Modifier, color: Color) {
 }
 
 @Composable
-fun UnreadDividerRow(count: Int) {
+fun UnreadDividerRow(
+    count: Int,
+    modifier: Modifier = Modifier
+) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(vertical = Spacing.space8),
         verticalAlignment = Alignment.CenterVertically

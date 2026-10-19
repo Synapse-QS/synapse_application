@@ -1,5 +1,4 @@
 package com.synapse.social.studioasinc.feature.inbox.inbox.screens
-import com.synapse.social.studioasinc.feature.inbox.inbox.components.TypingIndicator
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -96,6 +95,28 @@ internal fun ChatMessageList(
     }
 
     val reducedMotion = AnimationUtil.rememberReducedMotion()
+    val startedWithEmptyHistory = remember { messages.isEmpty() }
+    val initialItemKeys = remember {
+        val keys = mutableSetOf<String>()
+        if (!startedWithEmptyHistory) {
+            chatItems.forEach { item ->
+                when (item) {
+                    is ChatListItem.DateDivider -> keys.add("date_${item.label}")
+                    is ChatListItem.UnreadDivider -> keys.add("unread_divider")
+                    is ChatListItem.MessageItem -> keys.add(item.message.clientId)
+                }
+            }
+        }
+        keys
+    }
+    val oldestInitialCreatedAt = remember {
+        if (!startedWithEmptyHistory) {
+            messages.minByOrNull { it.createdAt }?.createdAt
+        } else {
+            null
+        }
+    }
+
     val reversedItems = remember(chatItems) { chatItems.reversed() }
     val groupPositions = remember(reversedItems) {
         val messageEntries = reversedItems.mapIndexedNotNull { index, item ->
@@ -169,7 +190,27 @@ internal fun ChatMessageList(
     ) {
         if (typingStatus != null && typingStatus.isTyping) {
             item(key = "typing_indicator") {
-                TypingIndicator(modifier = Modifier.padding(bottom = Spacing.space8))
+                val typingModifier = if (!reducedMotion) {
+                    Modifier.animateItem(
+                        // M3 fast effects spring: damping 1.0 (no overshoot), stiffness 3800
+                        fadeInSpec = spring(
+                            dampingRatio = 1.0f,
+                            stiffness = 3800f
+                        ),
+                        fadeOutSpec = spring(
+                            dampingRatio = 1.0f,
+                            stiffness = 3800f
+                        ),
+                        // M3 standard default spatial spring: damping 0.9, stiffness 700
+                        placementSpec = spring(
+                            dampingRatio = 0.9f,
+                            stiffness = 700f
+                        )
+                    )
+                } else {
+                    Modifier
+                }
+                TypingIndicator(modifier = typingModifier.padding(bottom = Spacing.space8))
             }
         }
 
@@ -180,9 +221,56 @@ internal fun ChatMessageList(
                  is ChatListItem.MessageItem -> item.message.clientId
              }
          }) { index, item ->
+            val itemKey = when (item) {
+                is ChatListItem.DateDivider -> "date_${item.label}"
+                is ChatListItem.UnreadDivider -> "unread_divider"
+                is ChatListItem.MessageItem -> item.message.clientId
+            }
+            val isHistorical = itemKey in initialItemKeys || (
+                item is ChatListItem.MessageItem &&
+                oldestInitialCreatedAt != null &&
+                item.message.createdAt < oldestInitialCreatedAt
+            )
+
+            // Shared placement spec for all item types so neighboring items
+            // shift smoothly when a new message is inserted.
+            // From M3 tokens: "standard default spatial" spring —
+            // damping 0.9 (barely bounces), stiffness 700 (settles quickly).
+            // Project design decision: using standard (not expressive) scheme
+            // for placement because chat message insertion should feel stable,
+            // not theatrical.
+            val placementModifier = if (!reducedMotion) {
+                Modifier.animateItem(
+                    // From M3 tokens: "fast effects" spring — damping 1.0
+                    // (no overshoot), stiffness 3800 (fast settle). Effects
+                    // springs are for color/opacity and must never overshoot.
+                    // Suppressed for historical/paginated bubbles so opening history doesn't flash.
+                    fadeInSpec = if (isHistorical) null else spring(
+                        dampingRatio = 1.0f,
+                        stiffness = 3800f
+                    ),
+                    fadeOutSpec = spring(
+                        dampingRatio = 1.0f,
+                        stiffness = 3800f
+                    ),
+                    placementSpec = spring(
+                        dampingRatio = 0.9f,
+                        stiffness = 700f
+                    )
+                )
+            } else {
+                Modifier
+            }
+
             when (item) {
-                is ChatListItem.DateDivider -> DateDividerChip(label = item.label)
-                is ChatListItem.UnreadDivider -> UnreadDividerRow(count = item.count)
+                is ChatListItem.DateDivider -> DateDividerChip(
+                    label = item.label,
+                    modifier = placementModifier
+                )
+                is ChatListItem.UnreadDivider -> UnreadDividerRow(
+                    count = item.count,
+                    modifier = placementModifier
+                )
                 is ChatListItem.MessageItem -> {
                     val message = item.message
                     val position = groupPositions.getOrNull(index) ?: GroupPosition.SINGLE
@@ -193,16 +281,8 @@ internal fun ChatMessageList(
                         targetId?.let(onLocateMessage)
                     }
                     val bottomGap = if (position == GroupPosition.LAST || position == GroupPosition.SINGLE) Spacing.space8 else Spacing.space2
-                    val animateModifier = if (!reducedMotion) {
-                        Modifier.animateItem(
-                            fadeInSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
-                            placementSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium)
-                        )
-                    } else {
-                        Modifier
-                    }
                     MessageBubble(
-                        modifier = animateModifier.padding(bottom = bottomGap),
+                        modifier = placementModifier.padding(bottom = bottomGap),
                         message = message,
                         isFromMe = message.isFromMe(currentUserId),
                         position = position,
